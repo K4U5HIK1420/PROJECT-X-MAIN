@@ -1,0 +1,60 @@
+# OS / editor
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
+
+# Git / local metadata
+.env
+backend/.env
+*.log
+*.err
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Virtual environments
+venv/
+env/
+.venv/
+runtime-venv/
+
+# Python build artifacts
+build/
+dist/
+*.egg-info/
+
+# Frontend
+frontend/node_modules/
+frontend/build/
+
+# Temporary interview / media files
+*.webm
+*.wav
+*.mp3
+*.mp4
+*.avi
+
+# Databases
+*.db
+*.sqlite3
+
+# Generated reports / exports
+*.pdf
+*.docx
+*.pptx
+
+# Project-specific generated files
+backend/backend.log
+backend/backend.err
+
+# Optional: keep the code repo clean from academic writeups
+report and thesis/

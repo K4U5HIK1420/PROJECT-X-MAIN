@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="860" viewBox="0 0 1400 860">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#334155"/>
+    </marker>
+    <style>
+      .title { font: 700 28px 'Times New Roman', serif; fill: #0f172a; }
+      .layer-title { font: 700 24px 'Times New Roman', serif; fill: #0f172a; }
+      .item { font: 400 18px 'Times New Roman', serif; fill: #111827; }
+      .caption { font: 400 16px 'Times New Roman', serif; fill: #475569; }
+      .box { stroke: #334155; stroke-width: 2.5; rx: 18; ry: 18; }
+      .arrow { stroke: #334155; stroke-width: 4; fill: none; marker-end: url(#arrow); }
+    </style>
+  </defs>
+
+  <rect x="0" y="0" width="1400" height="860" fill="#f8fafc"/>
+  <text x="700" y="55" text-anchor="middle" class="title">Figure 4.1: Overall System Architecture of PROJECT-X</text>
+
+  <rect x="70" y="120" width="270" height="600" class="box" fill="#dbeafe"/>
+  <text x="205" y="165" text-anchor="middle" class="layer-title">User Interface</text>
+  <text x="205" y="205" text-anchor="middle" class="caption">(React Frontend)</text>
+  <text x="205" y="265" text-anchor="middle" class="item">Profile Analysis View</text>
+  <text x="205" y="315" text-anchor="middle" class="item">Mock Interview View</text>
+  <text x="205" y="365" text-anchor="middle" class="item">Mentor Chat View</text>
+  <text x="205" y="415" text-anchor="middle" class="item">University Dashboard</text>
+  <text x="205" y="515" text-anchor="middle" class="item">Resume Text Input</text>
+  <text x="205" y="555" text-anchor="middle" class="item">Video / Audio Capture</text>
+  <text x="205" y="595" text-anchor="middle" class="item">Result Display</text>
+
+  <rect x="395" y="120" width="270" height="600" class="box" fill="#dcfce7"/>
+  <text x="530" y="165" text-anchor="middle" class="layer-title">REST API Layer</text>
+  <text x="530" y="205" text-anchor="middle" class="caption">(Flask Backend)</text>
+  <text x="530" y="265" text-anchor="middle" class="item">/analyze_profile</text>
+  <text x="530" y="315" text-anchor="middle" class="item">/mock_facial_interview</text>
+  <text x="530" y="365" text-anchor="middle" class="item">/mentor_chat</text>
+  <text x="530" y="415" text-anchor="middle" class="item">/download_report</text>
+  <text x="530" y="515" text-anchor="middle" class="item">Request Validation</text>
+  <text x="530" y="555" text-anchor="middle" class="item">JSON / File Handling</text>
+  <text x="530" y="595" text-anchor="middle" class="item">Response Formatting</text>
+
+  <rect x="720" y="120" width="330" height="600" class="box" fill="#fef3c7"/>
+  <text x="885" y="165" text-anchor="middle" class="layer-title">Processing Modules</text>
+  <text x="885" y="205" text-anchor="middle" class="caption">(ML + NLP + Analysis)</text>
+  <text x="885" y="255" text-anchor="middle" class="item">Resume Parser</text>
+  <text x="885" y="300" text-anchor="middle" class="item">Domain Classifier</text>
+  <text x="885" y="345" text-anchor="middle" class="item">Skill Gap Analyzer</text>
+  <text x="885" y="390" text-anchor="middle" class="item">Interview Analyzer</text>
+  <text x="885" y="435" text-anchor="middle" class="item">Whisper Transcription</text>
+  <text x="885" y="480" text-anchor="middle" class="item">DeepFace Emotion Review</text>
+  <text x="885" y="525" text-anchor="middle" class="item">Mentor Engine</text>
+  <text x="885" y="570" text-anchor="middle" class="item">PDF Report Generator</text>
+
+  <rect x="1105" y="120" width="235" height="600" class="box" fill="#fee2e2"/>
+  <text x="1222" y="165" text-anchor="middle" class="layer-title">Infrastructure</text>
+  <text x="1222" y="205" text-anchor="middle" class="caption">(Support Layer)</text>
+  <text x="1222" y="275" text-anchor="middle" class="item">Python Runtime</text>
+  <text x="1222" y="325" text-anchor="middle" class="item">Optional PostgreSQL</text>
+  <text x="1222" y="375" text-anchor="middle" class="item">Docker Setup</text>
+  <text x="1222" y="425" text-anchor="middle" class="item">Browser Media Devices</text>
+  <text x="1222" y="475" text-anchor="middle" class="item">Temporary File Storage</text>
+  <text x="1222" y="525" text-anchor="middle" class="item">API Configuration</text>
+
+  <path d="M 340 420 L 395 420" class="arrow"/>
+  <path d="M 665 420 L 720 420" class="arrow"/>
+  <path d="M 1050 420 L 1105 420" class="arrow"/>
+
+  <text x="367" y="395" text-anchor="middle" class="caption">HTTP Requests</text>
+  <text x="692" y="395" text-anchor="middle" class="caption">Service Calls</text>
+  <text x="1077" y="395" text-anchor="middle" class="caption">Runtime Support</text>
+</svg>
