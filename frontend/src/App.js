@@ -75,6 +75,16 @@ const toneClasses = {
   violet: "border-violet-300/20 bg-violet-400/10 text-violet-100",
 };
 
+const getInterviewReadinessFlags = (readiness) => {
+  const interview = readiness?.interview_analysis || {};
+
+  return {
+    whisperReady: interview.whisper_ready ?? interview.whisper_loaded,
+    deepfaceReady: interview.deepface_ready ?? interview.deepface_available,
+    opencvReady: interview.opencv_ready ?? interview.opencv_available,
+  };
+};
+
 const AppShell = ({ children }) => (
   <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(45,212,191,0.16),_transparent_26%),radial-gradient(circle_at_right,_rgba(56,189,248,0.14),_transparent_22%),linear-gradient(160deg,#07111f_0%,#0a1627_48%,#0e1b31_100%)] text-slate-100">
     <div className="pointer-events-none fixed inset-0 overflow-hidden opacity-50">
@@ -159,11 +169,12 @@ const MetricTile = ({ label, value, hint, tone = "blue", icon: Icon }) => (
 );
 
 const SignalRail = ({ readiness, recommendedDomain, profileMatchPercentage, analytics }) => {
+  const { whisperReady, deepfaceReady, opencvReady } = getInterviewReadinessFlags(readiness);
   const readinessCount = [
     readiness?.backend_status === "online",
-    readiness?.interview_analysis?.whisper_loaded,
-    readiness?.interview_analysis?.deepface_available,
-    readiness?.interview_analysis?.opencv_available,
+    whisperReady,
+    deepfaceReady,
+    opencvReady,
     readiness?.mentor_chat?.gemini_configured && readiness?.mentor_chat?.gemini_library_available,
   ].filter(Boolean).length;
 
@@ -355,16 +366,16 @@ const TranscriptHighlighter = ({ analysis }) => {
 };
 
 const ReadinessPanel = ({ readiness }) => {
-  const interviewStatus = readiness?.interview_analysis || {};
   const mentorStatus = readiness?.mentor_chat || {};
+  const { whisperReady, deepfaceReady, opencvReady } = getInterviewReadinessFlags(readiness);
 
   return (
     <GlassCard title="System Readiness" subtitle="Live backend capability check" icon={ShieldCheck}>
       <div className="flex flex-wrap gap-2">
         <StatusPill ok={readiness?.backend_status === "online"} label="Backend Online" />
-        <StatusPill ok={interviewStatus.whisper_loaded} label="Whisper Ready" />
-        <StatusPill ok={interviewStatus.deepface_available} label="DeepFace Ready" />
-        <StatusPill ok={interviewStatus.opencv_available} label="OpenCV Ready" />
+        <StatusPill ok={whisperReady} label="Whisper Ready" />
+        <StatusPill ok={deepfaceReady} label="DeepFace Ready" />
+        <StatusPill ok={opencvReady} label="OpenCV Ready" />
         <StatusPill ok={mentorStatus.gemini_configured && mentorStatus.gemini_library_available} label="Gemini Ready" />
       </div>
       <p className="mt-4 text-sm leading-6 text-slate-400">

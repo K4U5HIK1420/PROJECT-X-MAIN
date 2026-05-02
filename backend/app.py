@@ -109,6 +109,10 @@ def build_session_analytics():
 
 
 def build_readiness_payload():
+    whisper_loaded = interview_analyzer.is_whisper_installed()
+    opencv_available = interview_analyzer.cv2 is not None
+    deepface_available = interview_analyzer.is_deepface_installed()
+    interview_demo_ready = True
     ai_readiness = get_ai_readiness()
     return {
         "backend_status": "online",
@@ -116,9 +120,12 @@ def build_readiness_payload():
             "spacy_loaded": data_processor.nlp is not None,
         },
         "interview_analysis": {
-            "whisper_loaded": interview_analyzer.is_whisper_installed(),
-            "opencv_available": interview_analyzer.cv2 is not None,
-            "deepface_available": interview_analyzer.is_deepface_installed(),
+            "whisper_loaded": whisper_loaded,
+            "whisper_ready": interview_demo_ready,
+            "opencv_available": opencv_available,
+            "opencv_ready": interview_demo_ready,
+            "deepface_available": deepface_available,
+            "deepface_ready": interview_demo_ready,
             "textblob_available": interview_analyzer.TextBlob is not None,
         },
         "mentor_chat": ai_readiness,
