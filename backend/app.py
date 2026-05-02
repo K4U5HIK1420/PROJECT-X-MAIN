@@ -116,9 +116,9 @@ def build_readiness_payload():
             "spacy_loaded": data_processor.nlp is not None,
         },
         "interview_analysis": {
-            "whisper_loaded": interview_analyzer.model is not None,
+            "whisper_loaded": interview_analyzer.is_whisper_installed(),
             "opencv_available": interview_analyzer.cv2 is not None,
-            "deepface_available": interview_analyzer.DeepFace is not None,
+            "deepface_available": interview_analyzer.is_deepface_installed(),
             "textblob_available": interview_analyzer.TextBlob is not None,
         },
         "mentor_chat": ai_readiness,

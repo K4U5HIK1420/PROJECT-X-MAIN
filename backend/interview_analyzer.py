@@ -3,6 +3,7 @@ import re
 import shutil
 import subprocess
 import tempfile
+from importlib.util import find_spec
 
 try:
     import cv2
@@ -19,14 +20,28 @@ try:
 except ImportError:
     whisper = None
 
-try:
-    from deepface import DeepFace
-except ImportError:
-    DeepFace = None
-
-
 model = None
-if whisper is not None:
+whisper_load_attempted = False
+DeepFace = None
+deepface_load_attempted = False
+
+
+def is_whisper_installed():
+    return whisper is not None
+
+
+def is_deepface_installed():
+    return find_spec("deepface") is not None
+
+
+def get_whisper_model():
+    global model, whisper_load_attempted
+    if model is not None:
+        return model
+    if whisper_load_attempted or whisper is None:
+        return None
+
+    whisper_load_attempted = True
     try:
         print("Loading Whisper model...")
         model = whisper.load_model("base")
@@ -34,10 +49,30 @@ if whisper is not None:
     except Exception as e:
         print(f"Whisper unavailable, fallback mode enabled: {e}")
         model = None
+    return model
+
+
+def get_deepface_module():
+    global DeepFace, deepface_load_attempted
+    if DeepFace is not None:
+        return DeepFace
+    if deepface_load_attempted:
+        return None
+
+    deepface_load_attempted = True
+    try:
+        from deepface import DeepFace as DeepFaceModule
+
+        DeepFace = DeepFaceModule
+    except Exception as e:
+        print(f"DeepFace unavailable, fallback mode enabled: {e}")
+        DeepFace = None
+    return DeepFace
 
 
 def transcribe_video(video_path):
-    if model is None:
+    whisper_model = get_whisper_model()
+    if whisper_model is None:
         return "Fallback transcript: Interview transcription is unavailable in lightweight mode."
 
     temp_audio_path = None
@@ -67,7 +102,7 @@ def transcribe_video(video_path):
             else:
                 print(f"FFmpeg audio extraction failed: {completed.stderr}")
 
-        result = model.transcribe(audio_input)
+        result = whisper_model.transcribe(audio_input)
         transcript = (result.get("text") or "").strip()
         if transcript:
             return transcript
@@ -85,7 +120,8 @@ def analyze_video_faces(video_path):
     Analyze facial expression if OpenCV and DeepFace are available.
     Otherwise return a safe fallback response so the app can still run.
     """
-    if not video_path or cv2 is None or DeepFace is None:
+    deepface_module = get_deepface_module()
+    if not video_path or cv2 is None or deepface_module is None:
         return {
             "facial_score": 70,
             "emotions": {"dominant_emotion": "Neutral", "confidence": 0.5},
@@ -106,7 +142,7 @@ def analyze_video_faces(video_path):
 
         if current_frame % frame_interval == 0:
             try:
-                analysis = DeepFace.analyze(frame, actions=['emotion'], enforce_detection=False)
+                analysis = deepface_module.analyze(frame, actions=['emotion'], enforce_detection=False)
                 if isinstance(analysis, list):
                     dominant_emotion = analysis[0]['dominant_emotion']
                     emotions_list.append(dominant_emotion)
