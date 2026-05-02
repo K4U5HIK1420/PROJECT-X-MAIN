@@ -15,16 +15,27 @@ except OSError:
         nlp = None
 
 MOCK_SKILLS = [
-    "Python", "Java", "SQL", "React", "TensorFlow", "scikit-learn",
-    "NLP", "Machine Learning", "Deep Learning", "AWS", "Docker",
-    "Data Science", "Cybersecurity", "Django", "PostgreSQL", "JavaScript",
-    "R", "Pandas", "Matplotlib", "Linux", "Network Security", "Cryptography",
-    "Keras", "CNNs", "REST APIs", "Statistical Analysis", "Cloud Computing",
-    "HTML", "CSS", "Visualization", "Penetration Testing",
-    "SEO", "Google Analytics", "Google Ads", "Facebook Ads",
-    "Email Marketing", "Content Creation", "Social Media", "Analytics",
-    "Campaign Management", "Instagram Marketing", "LinkedIn Marketing",
-    "UI/UX", "Project Management", "Communication", "Teamwork"
+    "Python", "Java", "C", "C++", "C#", "JavaScript", "TypeScript", "PHP", "Go", "Rust",
+    "HTML", "CSS", "Tailwind CSS", "Bootstrap", "Material UI", "React", "Next.js", "Vue.js",
+    "Angular", "Redux", "Node.js", "Express", "Flask", "FastAPI", "Django", "Spring Boot",
+    "REST APIs", "GraphQL", "Microservices", "WebSockets",
+    "SQL", "MySQL", "PostgreSQL", "MongoDB", "SQLite", "Redis", "Firebase",
+    "Docker", "Kubernetes", "Jenkins", "CI/CD", "Terraform", "Git", "GitHub", "Linux",
+    "AWS", "Azure", "Google Cloud", "Cloud Computing", "Networking",
+    "Machine Learning", "Deep Learning", "Data Science", "NLP", "Computer Vision",
+    "TensorFlow", "PyTorch", "scikit-learn", "Keras", "Pandas", "NumPy", "Matplotlib",
+    "Seaborn", "Tableau", "Power BI", "Statistical Analysis", "Data Visualization",
+    "CNNs", "RNN", "Transformers", "LLMs",
+    "Cybersecurity", "Network Security", "Cryptography", "Penetration Testing",
+    "Vulnerability Assessment", "Ethical Hacking", "SIEM", "Firewalls", "OWASP",
+    "Threat Modeling", "Incident Response", "Security Monitoring",
+    "Android", "Flutter", "Dart", "React Native", "Mobile App Development",
+    "SEO", "Google Analytics", "Google Ads", "Facebook Ads", "Email Marketing",
+    "Content Creation", "Content Marketing", "Social Media", "Analytics",
+    "Campaign Management", "Instagram Marketing", "LinkedIn Marketing", "Brand Strategy",
+    "UI/UX", "Figma", "Wireframing", "Prototyping", "Responsive Design",
+    "Project Management", "Agile", "Scrum", "Problem Solving", "Communication",
+    "Teamwork", "Leadership", "Testing", "Unit Testing", "Automation Testing"
 ]
 
 def extract_text_from_pdf(pdf_file_path: str) -> str:

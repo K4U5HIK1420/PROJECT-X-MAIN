@@ -120,10 +120,18 @@ def build_readiness_payload():
     }
 
 
-def process_interview_job(job_id, video_path, profile_match_percentage=0):
+def process_interview_job(job_id, video_path, profile_match_percentage=None, audio_path=None, transcript_hint=""):
     try:
         update_job(job_id, status="processing", stage="Transcribing interview", progress=25)
-        transcript = transcribe_video(video_path)
+        transcript_source_path = audio_path or video_path
+        transcript = transcribe_video(transcript_source_path)
+        failure_markers = (
+            "Transcript extraction failed",
+            "Transcript could not be extracted",
+            "Fallback transcript",
+        )
+        if transcript_hint and any(marker in transcript for marker in failure_markers):
+            transcript = transcript_hint
 
         update_job(job_id, stage="Analyzing facial expressions", progress=55)
         facial_result = analyze_video_faces(video_path)
@@ -135,10 +143,16 @@ def process_interview_job(job_id, video_path, profile_match_percentage=0):
         update_job(job_id, stage="Calculating final score", progress=90)
         interview_score = communication_result.get("score", 0)
         facial_score = facial_result.get("facial_score", 0)
-        employability_score = calculate_employability_score(profile_match_percentage, interview_score)
+        employability_score = (
+            calculate_employability_score(profile_match_percentage, interview_score)
+            if profile_match_percentage is not None
+            else None
+        )
 
         result = {
             "employability_score": employability_score,
+            "profile_match_available": profile_match_percentage is not None,
+            "profile_match_percentage": profile_match_percentage,
             "interview_score": interview_score,
             "communication_analysis": communication_result,
             "facial_analysis": facial_result,
@@ -156,6 +170,8 @@ def process_interview_job(job_id, video_path, profile_match_percentage=0):
     finally:
         if os.path.exists(video_path):
             os.remove(video_path)
+        if audio_path and os.path.exists(audio_path):
+            os.remove(audio_path)
 
 
 @app.route("/api/status", methods=["GET"])
@@ -230,6 +246,12 @@ def create_interview_session():
     os.close(fd)
     request.files["video"].save(temp_path)
 
+    audio_temp_path = None
+    if "audio" in request.files:
+        audio_fd, audio_temp_path = tempfile.mkstemp(prefix=f"projectx_audio_{job_id}_", suffix=".webm")
+        os.close(audio_fd)
+        request.files["audio"].save(audio_temp_path)
+
     processing_jobs[job_id] = {
         "job_id": job_id,
         "status": "queued",
@@ -239,14 +261,16 @@ def create_interview_session():
         "error": None,
     }
 
+    raw_profile_match = request.form.get("profile_match_percentage")
     try:
-        profile_match_percentage = float(request.form.get("profile_match_percentage", 0))
+        profile_match_percentage = float(raw_profile_match) if raw_profile_match not in (None, "") else None
     except ValueError:
-        profile_match_percentage = 0
+        profile_match_percentage = None
+    transcript_hint = (request.form.get("transcript_hint") or "").strip()
 
     worker = threading.Thread(
         target=process_interview_job,
-        args=(job_id, temp_path, profile_match_percentage),
+        args=(job_id, temp_path, profile_match_percentage, audio_temp_path, transcript_hint),
         daemon=True,
     )
     worker.start()
@@ -276,13 +300,20 @@ def mock_facial_interview():
         facial_result = analyze_video_faces(temp_path)
         comm_result = analyze_communication(transcript)
         comm_result["full_transcript"] = transcript
+        raw_profile_match = request.form.get("profile_match_percentage")
         try:
-            profile_match_percentage = float(request.form.get("profile_match_percentage", 0))
+            profile_match_percentage = float(raw_profile_match) if raw_profile_match not in (None, "") else None
         except ValueError:
-            profile_match_percentage = 0
+            profile_match_percentage = None
 
         result = {
-            "employability_score": calculate_employability_score(profile_match_percentage, comm_result.get("score", 0)),
+            "employability_score": (
+                calculate_employability_score(profile_match_percentage, comm_result.get("score", 0))
+                if profile_match_percentage is not None
+                else None
+            ),
+            "profile_match_available": profile_match_percentage is not None,
+            "profile_match_percentage": profile_match_percentage,
             "interview_score": comm_result.get("score", 0),
             "communication_analysis": comm_result,
             "facial_analysis": facial_result,

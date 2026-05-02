@@ -1,6 +1,7 @@
 import os
 import pandas as pd
 import numpy as np
+import requests
 try:
     import google.generativeai as genai
 except ImportError:
@@ -13,6 +14,8 @@ from sklearn.model_selection import train_test_split
 from sklearn.multiclass import OneVsRestClassifier
 
 load_dotenv(os.path.join(os.path.dirname(__file__), ".env"))
+
+GEMINI_MODEL = "gemini-2.5-flash"
 
 # ==========================================
 # 🔑 PASTE YOUR API KEY HERE
@@ -36,7 +39,16 @@ MOCK_DATA = {
         "Worked with Linux, network security, and penetration testing. Knows cryptography and firewalls.",
         "Used React and JavaScript for front-end development. Good UI/UX sense.",
         "Bachelors in CS. Focus on network protocol analysis and threat modeling.",
-        "Experienced in backend development using Django and PostgreSQL."
+        "Experienced in backend development using Django and PostgreSQL.",
+        "Built full stack applications using React, Node.js, Express, MongoDB, HTML, and CSS.",
+        "Worked on cloud deployments using AWS, Docker, Kubernetes, and CI/CD pipelines.",
+        "Skilled in Tableau, SQL, Excel, Pandas, and Power BI for dashboarding and business analytics.",
+        "Developed Android and Flutter apps with Firebase, REST APIs, and Git version control.",
+        "Hands-on with Selenium, Java, Jenkins, SQL, and automation testing frameworks.",
+        "Worked on Solidity, Ethereum, smart contracts, and Web3.js based decentralized apps.",
+        "Strong in SEO, campaign management, Google Analytics, social media strategy, and digital branding.",
+        "Built APIs with Flask and FastAPI, integrated PostgreSQL and Redis, and deployed containerized services.",
+        "Worked with PyTorch, NLP, transformers, and large language model fine-tuning projects."
     ],
     'domain': [
         ['AI/ML', 'Software Development'],
@@ -45,7 +57,16 @@ MOCK_DATA = {
         ['Cybersecurity'],
         ['Software Development', 'Frontend Development'],
         ['Cybersecurity'],
-        ['Software Development']
+        ['Software Development'],
+        ['Full Stack Developer', 'Software Development'],
+        ['DevOps Engineer', 'Cloud Architect'],
+        ['Data Analyst', 'Data Science'],
+        ['Mobile App Developer'],
+        ['QA Automation Engineer'],
+        ['Blockchain Developer'],
+        ['Digital Marketing'],
+        ['Backend Developer', 'Software Development'],
+        ['AI/ML', 'Data Science']
     ]
 }
 
@@ -59,6 +80,14 @@ def rule_based_domain(text: str) -> str:
     if any(k in t for k in marketing_keywords):
         return "Digital Marketing"
 
+    full_stack_keywords = ["node.js", "express", "mongodb", "mern", "full stack", "next.js"]
+    if any(k in t for k in full_stack_keywords):
+        return "Full Stack Developer"
+
+    backend_keywords = ["django", "flask", "fastapi", "spring boot", "postgresql", "backend"]
+    if any(k in t for k in backend_keywords):
+        return "Backend Developer"
+
     frontend_keywords = ["react", "javascript", "html", "css", "tailwind", "material ui", "ui/ux", "frontend"]
     if any(k in t for k in frontend_keywords):
         return "Frontend Development"
@@ -70,6 +99,18 @@ def rule_based_domain(text: str) -> str:
     data_keywords = ["pandas", "dataframe", "statistical", "visualization", "tableau"]
     if any(k in t for k in data_keywords):
         return "Data Science"
+
+    cybersecurity_keywords = ["cybersecurity", "penetration testing", "cryptography", "network security", "ethical hacking"]
+    if any(k in t for k in cybersecurity_keywords):
+        return "Cybersecurity"
+
+    devops_keywords = ["docker", "kubernetes", "terraform", "jenkins", "ci/cd", "devops"]
+    if any(k in t for k in devops_keywords):
+        return "DevOps Engineer"
+
+    mobile_keywords = ["flutter", "dart", "android", "react native", "mobile app"]
+    if any(k in t for k in mobile_keywords):
+        return "Mobile App Developer"
 
     return None
 
@@ -110,21 +151,21 @@ class CareerClassifier:
         return predicted_domains
 
 MOCK_JOB_REQUIREMENTS = {
-    "AI/ML": ["Python", "TensorFlow", "Deep Learning", "SQL", "Cloud Computing"],
-    "Software Development": ["Python", "Django", "PostgreSQL", "Docker", "REST APIs", "AWS"],
-    "Digital Marketing": ["SEO", "Google Analytics", "Google Ads", "Facebook Ads", "Email Marketing", "Content Creation", "Social Media", "Analytics"],
-    "AI/ML Engineer": ["Python", "TensorFlow", "Deep Learning", "SQL", "Cloud Computing"],
-    "Data Science": ["Python", "R", "Pandas", "Statistical Analysis", "SQL", "Visualization"],
-    "Frontend Development": ["React", "JavaScript", "HTML", "CSS", "REST APIs"],
-    "Cybersecurity": ["Linux", "Network Security", "Cryptography", "Penetration Testing"],
-    "Backend Developer": ["Python", "Django", "PostgreSQL", "Docker", "REST APIs", "AWS"],
-    "Full Stack Developer": ["JavaScript", "React", "Node.js", "Express", "MongoDB", "HTML", "CSS"],
-    "DevOps Engineer": ["Linux", "Docker", "Kubernetes", "AWS", "Jenkins", "CI/CD", "Terraform"],
-    "Mobile App Developer": ["Dart", "Flutter", "Firebase", "REST APIs", "Git"],
-    "Data Analyst": ["SQL", "Excel", "Tableau", "Python", "Data Visualization"],
-    "Cloud Architect": ["AWS", "Networking", "Security", "Python", "Terraform"],
-    "QA Automation Engineer": ["Java", "Python", "Selenium", "Jenkins", "Git", "SQL"],
-    "Blockchain Developer": ["Solidity", "Ethereum", "Smart Contracts", "Web3.js", "JavaScript"]
+    "AI/ML": ["Python", "TensorFlow", "PyTorch", "Deep Learning", "Machine Learning", "SQL", "Cloud Computing", "NLP"],
+    "Software Development": ["Python", "Java", "Git", "REST APIs", "SQL", "Testing", "Problem Solving"],
+    "Digital Marketing": ["SEO", "Google Analytics", "Google Ads", "Facebook Ads", "Email Marketing", "Content Creation", "Social Media", "Analytics", "Campaign Management"],
+    "AI/ML Engineer": ["Python", "TensorFlow", "PyTorch", "Deep Learning", "Machine Learning", "SQL", "Cloud Computing", "MLOps"],
+    "Data Science": ["Python", "R", "Pandas", "NumPy", "Statistical Analysis", "SQL", "Data Visualization", "Machine Learning"],
+    "Frontend Development": ["React", "JavaScript", "TypeScript", "HTML", "CSS", "Responsive Design", "REST APIs", "UI/UX"],
+    "Cybersecurity": ["Linux", "Network Security", "Cryptography", "Penetration Testing", "Vulnerability Assessment", "Threat Modeling", "Incident Response"],
+    "Backend Developer": ["Python", "Django", "Flask", "FastAPI", "PostgreSQL", "Docker", "REST APIs", "Redis"],
+    "Full Stack Developer": ["JavaScript", "React", "Node.js", "Express", "MongoDB", "HTML", "CSS", "REST APIs", "Git"],
+    "DevOps Engineer": ["Linux", "Docker", "Kubernetes", "AWS", "Jenkins", "CI/CD", "Terraform", "Monitoring"],
+    "Mobile App Developer": ["Dart", "Flutter", "Firebase", "REST APIs", "Git", "Mobile App Development"],
+    "Data Analyst": ["SQL", "Excel", "Tableau", "Power BI", "Python", "Data Visualization", "Statistics"],
+    "Cloud Architect": ["AWS", "Azure", "Google Cloud", "Networking", "Security", "Terraform", "Docker", "Kubernetes"],
+    "QA Automation Engineer": ["Java", "Python", "Selenium", "Jenkins", "Git", "SQL", "Automation Testing"],
+    "Blockchain Developer": ["Solidity", "Ethereum", "Smart Contracts", "Web3.js", "JavaScript", "Cryptography"]
 }
 
 def analyze_skill_gap(required_skills: list, student_skills: list) -> dict:
@@ -195,19 +236,77 @@ def virtual_mentor_response(query, domain, employability_score, missing_skills):
     """
 
     try:
-        # Call Gemini API
-        model = genai.GenerativeModel('gemini-1.5-flash')
-        response = model.generate_content(
-            context_prompt,
-            generation_config={
+        endpoint = f"https://generativelanguage.googleapis.com/v1beta/models/{GEMINI_MODEL}:generateContent?key={MY_API_KEY}"
+        payload = {
+            "contents": [
+                {
+                    "parts": [
+                        {"text": context_prompt}
+                    ]
+                }
+            ],
+            "generationConfig": {
                 "temperature": 0.8,
-                "top_p": 0.95,
-                "max_output_tokens": 220,
-            },
-        )
-        return response.text
+                "topP": 0.95,
+                "maxOutputTokens": 320,
+                "thinkingConfig": {
+                    "thinkingBudget": 0
+                }
+            }
+        }
+        api_response = requests.post(endpoint, json=payload, timeout=30)
+        if not api_response.ok:
+            error_payload = {}
+            try:
+                error_payload = api_response.json()
+            except ValueError:
+                pass
+
+            error_message = error_payload.get("error", {}).get("message", api_response.text.strip())
+            normalized_error = error_message.lower()
+
+            if api_response.status_code == 403 and "service_disabled" in str(error_payload).lower():
+                return (
+                    "Gemini API is configured but disabled for this Google project. "
+                    "Enable the Gemini API in Google Cloud Console, wait a few minutes, and try again."
+                )
+
+            if api_response.status_code in (401, 403) and (
+                "api key" in normalized_error or "permission" in normalized_error or "access" in normalized_error
+            ):
+                return (
+                    "Gemini API access is being denied for the current key. "
+                    "Please verify the key, billing/project access, and Gemini API enablement."
+                )
+
+            raise ValueError(error_message or f"Gemini request failed with status {api_response.status_code}")
+
+        data = api_response.json()
+        candidates = data.get("candidates", [])
+        if candidates:
+            parts = candidates[0].get("content", {}).get("parts", [])
+            text = "".join(part.get("text", "") for part in parts).strip()
+            if text:
+                return text
+        raise ValueError(f"Unexpected Gemini response format: {data}")
     except Exception as e:
         print(f"Gemini API Error: {e}")
+        try:
+            if genai is not None:
+                model = genai.GenerativeModel(GEMINI_MODEL)
+                response = model.generate_content(
+                    context_prompt,
+                    generation_config={
+                        "temperature": 0.8,
+                        "top_p": 0.95,
+                        "max_output_tokens": 320,
+                    },
+                )
+                if getattr(response, "text", "").strip():
+                    return response.text.strip()
+        except Exception as nested_error:
+            print(f"Gemini SDK Fallback Error: {nested_error}")
+
         if "score" in query_lower or "employability" in query_lower:
             return (
                 f"To improve your employability for {domain}, strengthen {focus_skills}, "

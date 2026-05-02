@@ -1,4 +1,8 @@
+import os
 import re
+import shutil
+import subprocess
+import tempfile
 
 try:
     import cv2
@@ -36,8 +40,34 @@ def transcribe_video(video_path):
     if model is None:
         return "Fallback transcript: Interview transcription is unavailable in lightweight mode."
 
+    temp_audio_path = None
     try:
-        result = model.transcribe(video_path)
+        audio_input = video_path
+        ffmpeg_path = shutil.which("ffmpeg")
+        if ffmpeg_path:
+            fd, temp_audio_path = tempfile.mkstemp(suffix=".wav")
+            os.close(fd)
+            command = [
+                ffmpeg_path,
+                "-y",
+                "-i",
+                video_path,
+                "-vn",
+                "-acodec",
+                "pcm_s16le",
+                "-ar",
+                "16000",
+                "-ac",
+                "1",
+                temp_audio_path,
+            ]
+            completed = subprocess.run(command, capture_output=True, text=True)
+            if completed.returncode == 0 and os.path.exists(temp_audio_path):
+                audio_input = temp_audio_path
+            else:
+                print(f"FFmpeg audio extraction failed: {completed.stderr}")
+
+        result = model.transcribe(audio_input)
         transcript = (result.get("text") or "").strip()
         if transcript:
             return transcript
@@ -45,6 +75,9 @@ def transcribe_video(video_path):
     except Exception as e:
         print(f"Error extracting audio: {e}")
         return "Transcript extraction failed for this recording."
+    finally:
+        if temp_audio_path and os.path.exists(temp_audio_path):
+            os.remove(temp_audio_path)
 
 
 def analyze_video_faces(video_path):
@@ -150,6 +183,19 @@ def highlight_transcript_issues(transcript: str):
 
 def analyze_communication(transcript: str) -> dict:
     highlight_data = highlight_transcript_issues(transcript)
+    failure_markers = (
+        "Transcript extraction failed",
+        "Transcript could not be extracted",
+        "Fallback transcript",
+    )
+    if transcript and any(marker in transcript for marker in failure_markers):
+        return {
+            "score": 0,
+            "clarity_feedback": "Transcription failed. Check microphone permissions, recording length, and audio quality.",
+            "sentiment": "Neutral",
+            "transcript_analysis": highlight_data
+        }
+
     if not transcript:
         return {
             "score": 0,

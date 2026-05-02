@@ -146,6 +146,7 @@ const ProfileView = ({
   isLoading,
   handleAnalyzeProfile,
   readiness,
+  resultsRef,
 }) => (
   <div className="grid xl:grid-cols-3 gap-8">
     <div className="xl:col-span-2 space-y-8">
@@ -166,8 +167,14 @@ const ProfileView = ({
           {isLoading ? <Loader className="animate-spin mr-2" size={18} /> : <Zap size={18} className="mr-2" />}
           {isLoading ? "Analyzing..." : "Analyze Profile & Skills"}
         </button>
+        {analysisResult && (
+          <div className="mt-4 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
+            Analysis complete. Scroll down to see the recommended domain, skill gaps, and roadmap.
+          </div>
+        )}
       </Card>
 
+      <div ref={resultsRef}>
       <Card title="Career & Skill Gap Analysis" icon={GitBranch}>
         {analysisResult ? (
           <>
@@ -214,6 +221,7 @@ const ProfileView = ({
           <p className="text-gray-500">Analyze a profile to see extracted skills, recommended domain, and skill gaps.</p>
         )}
       </Card>
+      </div>
     </div>
 
     <div className="space-y-8">
@@ -240,17 +248,27 @@ const ProfileView = ({
   </div>
 );
 
-const InterviewView = ({ interviewResult, setInterviewResult, profileMatchPercentage }) => {
+const InterviewView = ({ interviewResult, setInterviewResult, profileMatchPercentage, hasProfileAnalysis }) => {
   const [phase, setPhase] = useState("idle");
   const [seconds, setSeconds] = useState(0);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [videoURL, setVideoURL] = useState(null);
+  const [audioURL, setAudioURL] = useState(null);
   const [evaluationJob, setEvaluationJob] = useState(null);
+  const [transcriptPreview, setTranscriptPreview] = useState("");
+  const [speechSupported, setSpeechSupported] = useState(false);
 
   const videoRef = useRef(null);
+  const recordedVideoRef = useRef(null);
+  const recordedAudioRef = useRef(null);
   const streamRef = useRef(null);
   const mediaRecorderRef = useRef(null);
+  const audioRecorderRef = useRef(null);
+  const speechRecognitionRef = useRef(null);
+  const transcriptRef = useRef("");
+  const transcriptLastResultIndexRef = useRef(0);
   const recordedChunksRef = useRef([]);
+  const recordedAudioChunksRef = useRef([]);
 
   useEffect(() => {
     if (phase === "live" && videoRef.current && streamRef.current) {
@@ -318,14 +336,62 @@ const InterviewView = ({ interviewResult, setInterviewResult, profileMatchPercen
       const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
       streamRef.current = stream;
       recordedChunksRef.current = [];
+      recordedAudioChunksRef.current = [];
       setEvaluationJob(null);
+      setVideoURL(null);
+      setAudioURL(null);
+      setTranscriptPreview("");
+      transcriptRef.current = "";
+      transcriptLastResultIndexRef.current = 0;
 
       const recorder = new MediaRecorder(stream);
       mediaRecorderRef.current = recorder;
       recorder.ondataavailable = (event) => {
         if (event.data.size) recordedChunksRef.current.push(event.data);
       };
+
+      const audioStream = new MediaStream(stream.getAudioTracks());
+      const audioRecorder = new MediaRecorder(audioStream);
+      audioRecorderRef.current = audioRecorder;
+      audioRecorder.ondataavailable = (event) => {
+        if (event.data.size) recordedAudioChunksRef.current.push(event.data);
+      };
+
       recorder.start();
+      audioRecorder.start();
+
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (SpeechRecognition) {
+        setSpeechSupported(true);
+        const recognition = new SpeechRecognition();
+        recognition.continuous = true;
+        recognition.interimResults = true;
+        recognition.lang = "en-US";
+        recognition.onresult = (event) => {
+          let finalText = "";
+          let interimText = "";
+          for (let i = event.resultIndex; i < event.results.length; i += 1) {
+            const result = event.results[i];
+            if (result.isFinal) {
+              finalText += `${result[0].transcript} `;
+            } else {
+              interimText += result[0].transcript;
+            }
+          }
+          if (finalText) {
+            transcriptRef.current = `${transcriptRef.current} ${finalText}`.trim();
+          }
+          setTranscriptPreview(`${transcriptRef.current} ${interimText}`.trim());
+        };
+        recognition.onerror = (event) => {
+          console.error("Speech recognition error:", event.error);
+        };
+        recognition.start();
+        speechRecognitionRef.current = recognition;
+      } else {
+        setSpeechSupported(false);
+      }
+
       setPhase("live");
     } catch (error) {
       alert("Could not access camera or microphone.");
@@ -344,8 +410,34 @@ const InterviewView = ({ interviewResult, setInterviewResult, profileMatchPercen
       setSeconds(0);
     };
 
+    if (audioRecorderRef.current) {
+      audioRecorderRef.current.onstop = () => {
+        const blob = new Blob(recordedAudioChunksRef.current, { type: "audio/webm" });
+        const url = URL.createObjectURL(blob);
+        setAudioURL(url);
+      };
+    }
+
+    try {
+      speechRecognitionRef.current?.stop();
+    } catch (error) {
+      console.error("Speech recognition stop error:", error);
+    }
+
     mediaRecorderRef.current.stop();
+    audioRecorderRef.current?.stop();
     streamRef.current?.getTracks().forEach((track) => track.stop());
+  };
+
+  const downloadBlob = (chunks, mimeType, filename) => {
+    if (!chunks.length) return;
+    const blob = new Blob(chunks, { type: mimeType });
+    const url = window.URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = filename;
+    anchor.click();
+    window.URL.revokeObjectURL(url);
   };
 
   const evaluatePerformance = async () => {
@@ -355,9 +447,20 @@ const InterviewView = ({ interviewResult, setInterviewResult, profileMatchPercen
     }
 
     const blob = new Blob(recordedChunksRef.current, { type: "video/webm" });
+    const audioBlob = recordedAudioChunksRef.current.length
+      ? new Blob(recordedAudioChunksRef.current, { type: "audio/webm" })
+      : null;
     const formData = new FormData();
     formData.append("video", blob, "interview.webm");
-    formData.append("profile_match_percentage", String(profileMatchPercentage || 0));
+    if (audioBlob) {
+      formData.append("audio", audioBlob, "interview-audio.webm");
+    }
+    if (hasProfileAnalysis) {
+      formData.append("profile_match_percentage", String(profileMatchPercentage));
+    }
+    if (transcriptRef.current.trim()) {
+      formData.append("transcript_hint", transcriptRef.current.trim());
+    }
 
     const response = await fetch(`${API_BASE_URL}/interview_sessions`, {
       method: "POST",
@@ -423,6 +526,12 @@ const InterviewView = ({ interviewResult, setInterviewResult, profileMatchPercen
                 ))}
               </ul>
             </div>
+            <div className="mb-4 rounded-lg border bg-slate-50 p-4">
+              <p className="font-semibold text-sm mb-2">Live Speech Preview</p>
+              <p className="text-sm text-gray-700 min-h-[48px]">
+                {transcriptPreview || (speechSupported ? "Listening for speech..." : "Browser speech recognition is not available here.")}
+              </p>
+            </div>
             <button onClick={endInterview} className="w-full bg-red-500 text-white py-2 rounded-lg hover:bg-red-600 transition-colors">
               End Interview
             </button>
@@ -431,11 +540,44 @@ const InterviewView = ({ interviewResult, setInterviewResult, profileMatchPercen
 
         {phase === "ended" && (
           <>
-            <video src={videoURL} controls className="w-full rounded-lg border mb-4" />
+            <video ref={recordedVideoRef} src={videoURL} controls className="w-full rounded-lg border mb-4" />
+            {audioURL && <audio ref={recordedAudioRef} src={audioURL} controls className="w-full mb-4" />}
+            <div className="grid sm:grid-cols-2 gap-3 mb-4">
+              <button
+                onClick={() => recordedVideoRef.current?.play()}
+                className="w-full bg-slate-700 text-white py-2 rounded-lg hover:bg-slate-800 transition-colors"
+              >
+                Play Recording Again
+              </button>
+              <button
+                onClick={() => downloadBlob(recordedChunksRef.current, "video/webm", "interview-recording.webm")}
+                className="w-full bg-slate-700 text-white py-2 rounded-lg hover:bg-slate-800 transition-colors"
+              >
+                Download Video
+              </button>
+              <button
+                onClick={() => recordedAudioRef.current?.play()}
+                disabled={!audioURL}
+                className="w-full bg-slate-700 text-white py-2 rounded-lg hover:bg-slate-800 transition-colors disabled:bg-slate-400"
+              >
+                Play Audio Only
+              </button>
+              <button
+                onClick={() => downloadBlob(recordedAudioChunksRef.current, "audio/webm", "interview-audio.webm")}
+                disabled={!recordedAudioChunksRef.current.length}
+                className="w-full bg-slate-700 text-white py-2 rounded-lg hover:bg-slate-800 transition-colors disabled:bg-slate-400"
+              >
+                Download Audio
+              </button>
+            </div>
             <button onClick={evaluatePerformance} className="w-full bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 transition-colors">
               Evaluate Performance
             </button>
-            <p className="text-xs text-gray-500 mt-3">Current profile match score used in the demo flow: {profileMatchPercentage}%</p>
+            <p className="text-xs text-gray-500 mt-3">
+              {hasProfileAnalysis
+                ? `Current profile match score used in the demo flow: ${profileMatchPercentage}%`
+                : "Analyze the profile first if you want a real employability score with interview + profile weighting."}
+            </p>
           </>
         )}
 
@@ -459,7 +601,12 @@ const InterviewView = ({ interviewResult, setInterviewResult, profileMatchPercen
             <div className="grid sm:grid-cols-2 gap-4">
               <div className="p-4 rounded-lg bg-blue-50 border border-blue-100">
                 <p className="text-sm text-gray-600">Employability Score</p>
-                <p className="text-3xl font-bold text-blue-700">{interviewResult.employability_score}</p>
+                <p className="text-3xl font-bold text-blue-700">
+                  {interviewResult.profile_match_available ? interviewResult.employability_score : "N/A"}
+                </p>
+                {!interviewResult.profile_match_available && (
+                  <p className="text-xs text-gray-500 mt-2">Requires profile analysis first</p>
+                )}
               </div>
               <div className="p-4 rounded-lg bg-green-50 border border-green-100">
                 <p className="text-sm text-gray-600">Interview Score</p>
@@ -505,13 +652,15 @@ const MentorView = ({
         {chatHistory.map((msg, index) => (
           <div key={`${msg.type}-${index}`} className={`flex ${msg.type === "user" ? "justify-end" : "justify-start"}`}>
             <div
-              className={`max-w-xs md:max-w-md p-3 rounded-xl shadow-md text-sm ${
+              className={`max-w-[85%] md:max-w-[75%] p-3 rounded-xl shadow-md text-sm ${
                 msg.type === "user"
                   ? "bg-blue-500 text-white rounded-br-none"
                   : "bg-white text-gray-800 rounded-tl-none border border-gray-300 shadow-sm"
               }`}
             >
-              {msg.text}
+              <p className="whitespace-pre-wrap break-words leading-relaxed">
+                {msg.text}
+              </p>
             </div>
           </div>
         ))}
@@ -620,8 +769,10 @@ export default function App() {
   const [currentView, setCurrentView] = useState("profile");
   const [readiness, setReadiness] = useState(null);
   const [analytics, setAnalytics] = useState(null);
+  const profileResultsRef = useRef(null);
 
   const profileMatchPercentage = analysisResult?.profile_match_percentage || 0;
+  const hasProfileAnalysis = Boolean(analysisResult);
   const recommendedDomain = analysisResult?.career_recommendations?.[0] || "Unknown";
 
   const loadDashboardData = async () => {
@@ -642,6 +793,12 @@ export default function App() {
   useEffect(() => {
     loadDashboardData();
   }, []);
+
+  useEffect(() => {
+    if (analysisResult && currentView === "profile") {
+      profileResultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }, [analysisResult, currentView]);
 
   const handleAnalyzeProfile = async () => {
     if (!resumeText.trim()) {
@@ -755,6 +912,7 @@ export default function App() {
               isLoading={isLoading}
               handleAnalyzeProfile={handleAnalyzeProfile}
               readiness={readiness}
+              resultsRef={profileResultsRef}
             />
           )}
 
@@ -766,6 +924,7 @@ export default function App() {
                 loadDashboardData();
               }}
               profileMatchPercentage={profileMatchPercentage}
+              hasProfileAnalysis={hasProfileAnalysis}
             />
           )}
 
