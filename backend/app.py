@@ -30,7 +30,13 @@ from ml_models import (
 from report_generator import generate_interview_report
 
 app = Flask(__name__)
-CORS(app)
+
+frontend_origin = os.getenv("FRONTEND_ORIGIN", "").strip()
+if frontend_origin:
+    allowed_origins = [origin.strip() for origin in frontend_origin.split(",") if origin.strip()]
+    CORS(app, resources={r"/api/*": {"origins": allowed_origins}})
+else:
+    CORS(app)
 
 career_classifier = CareerClassifier()
 career_classifier.train_model()
@@ -380,4 +386,5 @@ def interview_report():
 
 
 if __name__ == "__main__":
-    app.run(debug=False, port=5000, threaded=True, use_reloader=False)
+    port = int(os.getenv("PORT", "5000"))
+    app.run(host="0.0.0.0", debug=False, port=port, threaded=True, use_reloader=False)

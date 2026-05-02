@@ -1,3 +1,152 @@
+@import url("https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;700&display=swap");
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: dark;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    margin: 0;
+    font-family: "Outfit", sans-serif;
+    background: #07111f;
+    color: #e2e8f0;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  #root {
+    min-height: 100vh;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  ::selection {
+    background: rgba(34, 211, 238, 0.28);
+    color: #f8fafc;
+  }
+
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: rgba(15, 23, 42, 0.55);
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, rgba(56, 189, 248, 0.7), rgba(45, 212, 191, 0.7));
+    border-radius: 999px;
+  }
+}
+
+@layer utilities {
+  .font-display {
+    font-family: "Space Grotesk", sans-serif;
+  }
+}
+
+@keyframes float-slow {
+  0%, 100% {
+    transform: translateY(0px) translateX(0px);
+  }
+  50% {
+    transform: translateY(-18px) translateX(10px);
+  }
+}
+
+@keyframes float-delayed {
+  0%, 100% {
+    transform: translateY(0px) translateX(0px);
+  }
+  50% {
+    transform: translateY(16px) translateX(-12px);
+  }
+}
+
+@keyframes pulse-soft {
+  0%, 100% {
+    opacity: 0.4;
+    transform: scale(0.98);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.03);
+  }
+}
+
+@keyframes grid-drift {
+  0% {
+    transform: translate3d(0, 0, 0);
+  }
+  100% {
+    transform: translate3d(18px, 18px, 0);
+  }
+}
+
+@keyframes scanline {
+  0% {
+    transform: translateY(-120%);
+  }
+  100% {
+    transform: translateY(120%);
+  }
+}
+
+@keyframes orbit-ring {
+  0% {
+    transform: rotate(0deg) translateX(76px) rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg) translateX(76px) rotate(-360deg);
+  }
+}
+
+@keyframes orbit-ring-reverse {
+  0% {
+    transform: rotate(360deg) translateX(56px) rotate(-360deg);
+  }
+  100% {
+    transform: rotate(0deg) translateX(56px) rotate(0deg);
+  }
+}
+
+@layer utilities {
+  .animate-float-slow {
+    animation: float-slow 12s ease-in-out infinite;
+  }
+
+  .animate-float-delayed {
+    animation: float-delayed 15s ease-in-out infinite;
+  }
+
+  .animate-pulse-soft {
+    animation: pulse-soft 4.2s ease-in-out infinite;
+  }
+
+  .animate-grid-drift {
+    animation: grid-drift 26s linear infinite;
+  }
+
+  .animate-scanline {
+    animation: scanline 10s linear infinite;
+  }
+
+  .animate-orbit-ring {
+    animation: orbit-ring 9s linear infinite;
+  }
+
+  .animate-orbit-ring-reverse {
+    animation: orbit-ring-reverse 7s linear infinite;
+  }
+}
